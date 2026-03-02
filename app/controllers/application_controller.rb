@@ -12,7 +12,7 @@ class ApplicationController < ActionController::API
   end
 
   # Root endpoint (Task 1.1 requirement)
-  def index
+  def index s
     render json: { 
       message: 'Rails API Challenge - Product Catalog',
       version: '1.0.0',
