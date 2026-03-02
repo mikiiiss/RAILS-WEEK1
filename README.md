@@ -193,4 +193,15 @@ Instead of asking "fix this bug," ask:
 - `test/models/product_test.rb` - Model testing examples
 - `test/controllers/api/v1/products_controller_test.rb` - Controller testing examples
 
+## My Progress
+
+- **Task 1 (Understanding the Existing API)**:
+  - Started the application with Docker Compose and verified core endpoints: `/api/v1/products`, `/api/v1/categories`, `/health`, and `/`.
+  - Explored the database via `rails console` (`Product.count`, `Category.count`, `Product.first.category`) to understand the data and associations.
+  - Reviewed `config/routes.rb`, `app/models/product.rb`, `app/models/category.rb`, and `app/controllers/api/v1/products_controller.rb` to map routes → controllers → models.
+
+- **Task 2 (Bug Fixes so far)**:
+  - **Bug 2.1 (N+1 query)**: Updated `products#index` to use `Product.includes(:category)` so category data is loaded in a single additional query instead of one per product.
+  - **Bug 2.2 (Mass assignment)**: Replaced unsafe parameter usage with strong parameters in both `ProductsController` and `CategoriesController`, ensuring fields like `is_admin` cannot be set via the API.
+
 Happy debugging and learning! 

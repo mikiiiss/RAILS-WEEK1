@@ -16,7 +16,8 @@ class ActiveSupport::TestCase
   
   # Helper method to create test data
   def create_test_category(name = "Test Category")
-    Category.create!(name: name)
+    # Use find_or_create_by! to avoid uniqueness violations on name
+    Category.find_or_create_by!(name: name)
   end
 
   def create_test_product(category = nil, attributes = {})
@@ -37,15 +38,21 @@ class ActiveSupport::TestCase
   end
 
   def api_post(path, data = {}, headers = {})
-    post path, params: data, headers: headers.merge({ 'Accept' => 'application/json', 'Content-Type' => 'application/json' })
+    post path,
+         params: data.to_json,
+         headers: headers.merge({ 'Accept' => 'application/json', 'Content-Type' => 'application/json' })
   end
 
   def api_put(path, data = {}, headers = {})
-    put path, params: data, headers: headers.merge({ 'Accept' => 'application/json', 'Content-Type' => 'application/json' })
+    put path,
+        params: data.to_json,
+        headers: headers.merge({ 'Accept' => 'application/json', 'Content-Type' => 'application/json' })
   end
 
   def api_patch(path, data = {}, headers = {})
-    patch path, params: data, headers: headers.merge({ 'Accept' => 'application/json', 'Content-Type' => 'application/json' })
+    patch path,
+          params: data.to_json,
+          headers: headers.merge({ 'Accept' => 'application/json', 'Content-Type' => 'application/json' })
   end
 
   def api_delete(path, headers = {})
@@ -55,7 +62,8 @@ class ActiveSupport::TestCase
   # Helper method to assert JSON response
   def assert_json_response(expected_status = :ok)
     assert_response expected_status
-    assert_equal 'application/json', response.content_type
+    # Allow charset suffix (e.g., "application/json; charset=utf-8")
+    assert_match %r{\Aapplication/json}, response.content_type
   end
 
   # Helper method to parse JSON response

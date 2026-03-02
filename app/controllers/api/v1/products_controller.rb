@@ -13,11 +13,16 @@ module Api
 
       # GET /api/v1/products
       def index
-        # BUG 2.1: This will cause an N+1 query problem.
-        # For each product, a separate query will be made to fetch its category.
-        # Also, if a product's category_id points to a non-existent category,
-        # category_name will be nil, which is also part of the bug description.
-        @products = Product.all
+        # Base scope with eager loaded categories (fixes N+1 from Bug 2.1)
+        @products = Product.includes(:category)
+
+        # Task 3.1: optional filtering by category_id
+        if params[:category_id].present?
+          @products = @products.where(category_id: params[:category_id])
+        end
+
+        # Task 3.1: pagination via Kaminari (page & per_page)
+        @products = @products.page(params[:page]).per(params[:per_page] || 20)
 
         # Simplified JSON rendering for illustration.
         # In a real app, you'd typically use serializers (e.g., Active Model Serializers, jbuilder).
@@ -59,7 +64,7 @@ module Api
         # BUG 2.2: Mass assignment vulnerability.
         # This allows any attribute in the `product` hash to be set,
         # including potentially malicious or unintended ones (e.g., `is_admin`).
-        @product = Product.new(params[:product]) # DIRECT ASSIGNMENT FROM PARAMS
+        @product = Product.new(product_params)
 
         if @product.save
           render json: @product, status: :created
@@ -74,10 +79,9 @@ module Api
         # BUG 2.2: Mass assignment vulnerability.
         # This allows any attribute in the `product` hash to be set,
         # including potentially malicious or unintended ones.
-        if @product.update(params.permit!) # USING permit! which is unsafe
-          # BUG 2.3 (Part 2): Cache invalidation missing.
-          # The `show` action's cache is not explicitly expired here by default.
-          # You would add `expire_action action: :show, id: @product.id` as a fix.
+        if @product.update(product_params)
+          # Bug 2.3 fix: expire cached show response so updated data is returned
+          expire_action action: :show, id: @product.id
           render json: @product
         else
           render json: @product.errors, status: :unprocessable_entity
@@ -87,28 +91,40 @@ module Api
       # DELETE /api/v1/products/:id
       def destroy
         @product = Product.find(params[:id])
+        product_id = @product.id
         @product.destroy
+        # Bug 2.3 fix: ensure any cached show response is removed after delete
+        expire_action action: :show, id: product_id
         head :no_content
       end
 
       # Custom action for featuring a product (for Task 3.2)
       def feature
         @product = Product.find(params[:id])
+        # Task 3.2: mark product as featured.
+        # In a real app you would also enforce authorization so only admins can do this.
         if @product.update(is_featured: true)
-          # BUG 2.3 (Part 3): Cache invalidation missing for custom actions as well.
-          # The `show` action's cache is not explicitly expired here by default.
-          # You would add `expire_action action: :show, id: @product.id` as a fix.
+          # Bug 2.3 fix: featuring should also invalidate cached show output
+          expire_action action: :show, id: @product.id
           render json: @product
         else
           render json: @product.errors, status: :unprocessable_entity
         end
       end
 
-      # Private method for strong parameters (this would be the fix for Bug 2.2)
-      # private
-      # def product_params
-      #   params.require(:product).permit(:name, :description, :price, :stock_quantity, :category_id, :published_at, :is_featured)
-      # end
+      # Private method for strong parameters (fix for Bug 2.2)
+      private
+      def product_params
+        params.require(:product).permit(
+          :name,
+          :description,
+          :price,
+          :stock_quantity,
+          :category_id,
+          :published_at,
+          :is_featured
+        )
+      end
     end
   end
 end 

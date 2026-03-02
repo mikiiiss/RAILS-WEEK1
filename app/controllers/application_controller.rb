@@ -1,4 +1,5 @@
 class ApplicationController < ActionController::API
+  include ActionController::Caching
   # Common logic for all controllers
   before_action :set_default_response_format
 

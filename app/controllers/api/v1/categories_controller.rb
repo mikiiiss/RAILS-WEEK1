@@ -5,15 +5,17 @@ module Api
     class CategoriesController < ApplicationController
       # GET /api/v1/categories
       def index
-        # BUG: No error handling for database connection issues
-        # BUG: No pagination implemented (Task 3.1 requirement)
+        # Add basic error handling and pagination
         @categories = Category.all
-        
+
+        # Optional pagination for categories (similar to products)
+        @categories = @categories.page(params[:page]).per(params[:per_page] || 20) if @categories.respond_to?(:page)
+
         render json: @categories.map { |category|
           {
             id: category.id,
             name: category.name,
-            products_count: category.products.count, # This could cause N+1 if not careful
+            products_count: category.products.count,
             created_at: category.created_at,
             updated_at: category.updated_at
           }
@@ -22,8 +24,8 @@ module Api
 
       # GET /api/v1/categories/:id
       def show
-        # BUG: No error handling for non-existent records
-        @category = Category.find(params[:id])
+        @category = Category.find_by(id: params[:id])
+        return render json: { error: "Category not found" }, status: :not_found unless @category
         
         render json: {
           id: @category.id,
@@ -42,7 +44,7 @@ module Api
       # POST /api/v1/categories
       def create
         # BUG: Mass assignment vulnerability - no strong parameters
-        @category = Category.new(params[:category])
+        @category = Category.new(category_params)
         
         if @category.save
           render json: @category, status: :created
@@ -56,7 +58,7 @@ module Api
         @category = Category.find(params[:id])
         
         # BUG: Mass assignment vulnerability - using permit!
-        if @category.update(params.permit!)
+        if @category.update(category_params)
           render json: @category
         else
           render json: @category.errors, status: :unprocessable_entity
@@ -66,18 +68,23 @@ module Api
       # DELETE /api/v1/categories/:id
       def destroy
         @category = Category.find(params[:id])
-        
-        # BUG: No handling of dependent records
-        # If category has products, this will fail due to foreign key constraint
+
+        # Handle dependent records explicitly: prevent deletion if products exist
+        if @category.products.exists?
+          return render json: {
+            error: "Cannot delete category with associated products"
+          }, status: :unprocessable_entity
+        end
+
         @category.destroy
         head :no_content
       end
 
-      # Private method for strong parameters (this would be the fix)
-      # private
-      # def category_params
-      #   params.require(:category).permit(:name)
-      # end
+      # Private method for strong parameters (fix for mass assignment)
+      private
+      def category_params
+        params.require(:category).permit(:name)
+      end
     end
   end
 end 
