@@ -200,8 +200,20 @@ Instead of asking "fix this bug," ask:
   - Explored the database via `rails console` (`Product.count`, `Category.count`, `Product.first.category`) to understand the data and associations.
   - Reviewed `config/routes.rb`, `app/models/product.rb`, `app/models/category.rb`, and `app/controllers/api/v1/products_controller.rb` to map routes → controllers → models.
 
-- **Task 2 (Bug Fixes so far)**:
-  - **Bug 2.1 (N+1 query)**: Updated `products#index` to use `Product.includes(:category)` so category data is loaded in a single additional query instead of one per product.
-  - **Bug 2.2 (Mass assignment)**: Replaced unsafe parameter usage with strong parameters in both `ProductsController` and `CategoriesController`, ensuring fields like `is_admin` cannot be set via the API.
+- **Task 2 (Identifying & Fixing Bugs)**:
+  - **Bug 2.1 (N+1 query)**: Updated `products#index` to use `Product.includes(:category)` to resolve the N+1 performance issue and handle potential nil category names correctly.
+  - **Bug 2.2 (Mass assignment)**: Implemented Strong Parameters in `ProductsController` and `CategoriesController` to prevent unauthorized modification of fields like `is_admin`.
+  - **Bug 2.3 (Stale caching)**: Implemented manual cache invalidation using `expire_action` in both standard (`update`, `destroy`) and custom (`feature`) controller actions.
 
-Happy debugging and learning! 
+- **Task 3 (New Features)**:
+  - **Filtering & Pagination**: Added category filtering and pagination (via Kaminari) to the products index endpoint.
+  - **Product Featuring**: Created a new `PATCH /feature` endpoint to mark products as featured, complete with cache expiration.
+
+- **Task 4 (Productionizing & Testing)**:
+  - **Testing**: Updated model and controller tests to verify all bug fixes and new features.
+  - **Production Config**: Reviewed and verified `production.rb` for proper caching and logging settings.
+
+- **Final Deliverables**:
+  - Created a [Final Technical Report](file:///home/miki/rails-week1/final_technical_report.md) as required in the challenge instructions.
+
+Happy debugging and learning!
