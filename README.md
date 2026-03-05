@@ -214,6 +214,6 @@ Instead of asking "fix this bug," ask:
   - **Production Config**: Reviewed and verified `production.rb` for proper caching and logging settings.
 
 - **Final Deliverables**:
-  - Created a [Final Technical Report](file:///home/miki/rails-week1/final_technical_report.md) as required in the challenge instructions.
+  - Created a [Final Technical Report](./final_technical_report.md) as required in the challenge instructions.
 
 Happy debugging and learning!
